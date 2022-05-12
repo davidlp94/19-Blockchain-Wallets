@@ -9,32 +9,97 @@
 
 
 
-# Blockchain With Python
-This repository contains a Python file named pychain.py which uses Python modules to create a temporary blockchain called PyChain. Using Streamlit, a web interface can be generated which takes (3) different inputs, sender information, receiver information and the amount being sent. Using the Streamlit application, you can generate several different block that are chained together using sha-256 hashing. You can also validate the blockchain by clicking "Validate Chain" in which each block is validated by comparing the previous-hash of the block to the data attribute in the new block that contains the previous hash. If they match, that block is validated and gets added to the blockchain.
+# Blockchain Wallets - FinTech Finder
+This repository contains a a FinTech application that enables customers to send cryptocurrency payments to fintech professionals using thier public Ethereum address.
 
 ---
 
 ## Technologies
 
-This project leverages the following tools for financial analysis:
+NOTE: Please refer to python files for entirety of main source code. In addition, a .env file should be created in your local repository that contains your Mnemonic seed phrase.
+
+This project leverages the following tools:
 
 - Conda
 - Python 3.7
-- Pychain
 - Streamlit
+- Web3
 - VSCode
 - Git Bash
+- Truffle/Ganache
 
-To run this application, open app.py in VSCode and open a new terminal. Once the new terminal window is opened, run the following command "streamlit run pychain.py". Once Streamlit is opened, you may explore the application and add as many blocks to the blockchain as needed.
+To run this application, open fintech_finder.py in VSCode and open a new terminal. In addition, make sure Ganache is open and activated. Once the new terminal window is opened, run the following command "streamlit run fintech_finder.py". Next, Once Streamlit is opened, you may explore the application and complete as many test transactions as needed.
 
-There is also a slider to change the difficulty level for the "puzzle" to add additional blocks to the blockchain. You can experiment with the slider and see that the harder the difficulty, the longer it takes for the puzzle to be solved and and the block be added to the blockchain. In a real world scenario, miners and/or validators will compete to solve the puzzle the fastest to be awarded the privilage to add the next block to the blockchain and be awarded the gas fees associated with the transaction.
+The following functions have been modulized and are located in crypto_wallet.py:
+
+```
+def generate_account():
+    """Create a digital wallet and Ethereum account from a mnemonic seed phrase."""
+    # Fetch mnemonic from environment variable.
+    mnemonic = os.getenv("MNEMONIC")
+
+    # Create Wallet Object
+    wallet = Wallet(mnemonic)
+
+    # Derive Ethereum Private Key
+    private, public = wallet.derive_account("eth")
+
+    # Convert private key into an Ethereum account
+    account = Account.privateKeyToAccount(private)
+
+    return account
+
+def get_balance(w3, address):
+    """Using an Ethereum account address access the balance of Ether"""
+    # Get balance of address in Wei
+    wei_balance = w3.eth.get_balance(address)
+
+    # Convert Wei value to ether
+    ether = w3.fromWei(wei_balance, "ether")
+
+    # Return the value in ether
+    return ether
+
+
+def send_transaction(w3, account, to, wage):
+    """Send an authorized transaction to the Ganache blockchain."""
+    # Set gas price strategy
+    w3.eth.setGasPriceStrategy(medium_gas_price_strategy)
+
+    # Convert eth amount to Wei
+    value = w3.toWei(wage, "ether")
+
+    # Calculate gas estimate
+    gasEstimate = w3.eth.estimateGas({"to": to, "from": account.address, "value": value})
+
+    # Construct a raw transaction
+    raw_tx = {
+        "to": to,
+        "from": account.address,
+        "value": value,
+        "gas": gasEstimate,
+        "gasPrice": 0,
+        "nonce": w3.eth.getTransactionCount(account.address)
+    }
+
+    # Sign the raw transaction with ethereum account
+    signed_tx = account.signTransaction(raw_tx)
+
+    # Send the signed transactions
+    return w3.eth.sendRawTransaction(signed_tx.rawTransaction)
+   ```
+   
 
 ---
 ## Streamlit Interface
 
-The following screenshot below shows the validity of the blockchain, a drop-down menu in which you may choose which block you would like to view its data such as the hash, date created etc.
+The following screenshots below shows the Streamlit user interface in which you are able to select a FinTech Professional, view thier public Ethereum address and thier hourly rate in ETH. Using the sidebars selections, you can input the requested professional and the number of hours requested for work which will then generate the total wage in Ether for the work. Once you press the "Send Transaction" button, a transaction hash is printed on the bottom of the sidebar and the transaction is sent to the local Ganache blockchain.
 
-![Blockchain_Validity_and_Drop_Down_Menu](https://user-images.githubusercontent.com/96163075/166614798-4f28d302-d86e-4425-a223-21bcc4f73182.PNG)
+![image](https://user-images.githubusercontent.com/96163075/167982143-64fb2dc6-9c20-4297-8cfc-d70ab402a8fd.png)
+
+![Ganache_Balance](https://user-images.githubusercontent.com/96163075/167982298-17adf891-96a9-4acd-b458-ddba66bd0d79.PNG)
+
+![Ganache_Transaction](https://user-images.githubusercontent.com/96163075/167982305-3188c881-39cd-4127-85e9-9f669e2733be.PNG)
 
 ---
 
